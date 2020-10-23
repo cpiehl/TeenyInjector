@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net35</TargetFramework>
+    <Authors>Charles Piehl</Authors>
+    <Version>1.1.0</Version>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <Description>The teeniest dependency injector I can get away with. Only supports constructor injection.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
+</Project>
