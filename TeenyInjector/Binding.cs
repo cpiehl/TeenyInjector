@@ -50,7 +50,12 @@ namespace TeenyInjector
 		/// <returns>Bound Binding object.</returns>
 		public Binding To<T>()
 		{
-			this.ImplementationType = typeof(T);
+			return To(typeof(T));
+		}
+
+		internal Binding To(Type implementationType)
+		{
+			this.ImplementationType = implementationType;
 			UpdateBindingsLookup();
 			return this;
 		}

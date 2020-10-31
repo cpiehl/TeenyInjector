@@ -12,6 +12,8 @@ namespace TeenyInjector
 		private Dictionary<object, object> _instances = new Dictionary<object, object>();
 		internal Dictionary<Type, List<Binding>> BindingsLookup = new Dictionary<Type, List<Binding>>();
 
+		public bool AutoBindEnabled { get; set; } = true;
+
 		/// <summary>
 		/// Default. Bind all IKernelBindings found in executing assembly.
 		/// </summary>
@@ -60,13 +62,12 @@ namespace TeenyInjector
 		/// <returns>Binding object to be used with Binding.To()</returns>
 		public Binding Bind<T>()
 		{
-			Binding b = new Binding<T>(this);
-			Type inheritedType = typeof(T);
+			return Bind(typeof(T));
+		}
 
-			//if (this._bindings.ContainsKey(inheritedType))
-			//{
-			//	throw new Exception($"'{inheritedType}' is already bound to this kernel.");
-			//}
+		private Binding Bind(Type inheritedType)
+		{
+			Binding b = new Binding(inheritedType, this);
 
 			this._bindings[inheritedType] = b;
 
@@ -122,6 +123,12 @@ namespace TeenyInjector
 					// interface or abstract class probably
 					return Get(binding.ImplementationType, constructorParams);
 				}
+			}
+			else if (this.AutoBindEnabled && t.IsClass)
+			{
+				// Auto create new Binding for this Type
+				this.Bind(t).To(t);
+				return Get(t, constructorParams, requestingType);
 			}
 			else
 			{

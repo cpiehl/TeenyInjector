@@ -24,6 +24,17 @@ namespace TeenyInjector.Tests
 		{
 			TeenyKernel kernel = new TeenyKernel();
 
+			// disabled autobind should throw
+			kernel.AutoBindEnabled = false;
+
+			Assert.ThrowsException<Exception>(() =>
+			{
+				Class1 test2 = kernel.Get<Class1>();
+			});
+
+			// enable autobind and try again
+			kernel.AutoBindEnabled = true;
+
 			Class1 test1 = kernel.Get<Class1>();
 
 			Assert.IsNotNull(test1);
