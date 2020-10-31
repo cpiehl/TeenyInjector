@@ -9,6 +9,7 @@ namespace TeenyInjector
 	public class TeenyKernel
 	{
 		private Dictionary<Type, Binding> _bindings = new Dictionary<Type, Binding>();
+		private Dictionary<object, object> _instances = new Dictionary<object, object>();
 
 		/// <summary>
 		/// Default. Bind all IKernelBindings found in executing assembly.
@@ -31,7 +32,7 @@ namespace TeenyInjector
 		}
 
 		/// <summary>
-		/// Bind all types configured in all objects implementing IKernelBindings found in Assembly to this BindingKernel.
+		/// Bind all types configured in all objects implementing IKernelBindings found in Assembly to this TeenyKernel.
 		/// </summary>
 		/// <param name="assembly">Assembly to search for IKernelBindings implementations.</param>
 		public TeenyKernel(Assembly assembly)
@@ -40,7 +41,7 @@ namespace TeenyInjector
 		}
 
 		/// <summary>
-		/// Bind all types configured in all objects implementing IKernelBindings found in input list to this BindingKernel.
+		/// Bind all types configured in all objects implementing IKernelBindings found in input list to this TeenyKernel.
 		/// </summary>
 		/// <param name="bindings">List of Types implementing IKernelBindings.</param>
 		private void BindBindingsList(IEnumerable<Type> bindings)
@@ -52,18 +53,22 @@ namespace TeenyInjector
 		}
 
 		/// <summary>
-		/// Start binding interface type T to this BindingKernel. Finish binding with Binding.To().
+		/// Start binding inherited type T to this TeenyKernel. Finish binding with Binding.To().
 		/// </summary>
 		/// <typeparam name="T">Interface Type to start binding.</typeparam>
 		/// <returns>Binding object to be used with Binding.To()</returns>
 		public Binding Bind<T>()
 		{
-			Binding b = new Binding<T>();
-			if (this._bindings.ContainsKey(typeof(T)))
+			Binding b = new Binding<T>(this);
+			Type inheritedType = typeof(T);
+
+			if (this._bindings.ContainsKey(inheritedType))
 			{
-				throw new Exception($"'{typeof(T)}' is already bound to this kernel.");
+				throw new Exception($"'{inheritedType}' is already bound to this kernel.");
 			}
-			this._bindings.Add(typeof(T), b);
+
+			this._bindings.Add(inheritedType, b);
+
 			return b;
 		}
 
@@ -93,9 +98,9 @@ namespace TeenyInjector
 
 			}
 
-			if (t.IsInterface)
+			if (t.IsInterface || t.IsAbstract)
 			{
-				return this.Get(GetBindingByInterface(t).ImplementationType, constructorParams);
+				return this.Get(GetBindingByInheritedType(t), constructorParams);
 			}
 			else if (t.IsClass)
 			{
@@ -114,7 +119,7 @@ namespace TeenyInjector
 					if (parameters.All(p => false
 						|| p.ParameterType.IsClass
 						|| p.ParameterType.IsPrimitive
-						|| GetBindingByInterface(p.ParameterType) != null
+						|| GetBindingByInheritedType(p.ParameterType) != null
 					))
 					{
 						return ci.Invoke(parameters.Select(p =>
@@ -147,12 +152,36 @@ namespace TeenyInjector
 			}
 		}
 
+		private object Get(Binding binding, Dictionary<string, object> constructorParams = null)
+		{
+			if (binding is null) return null;
+
+			object scope = binding.Scope;
+			if (scope is null)
+			{
+				// No scope defined, equivalent to Transient
+				return this.Get(binding.ImplementationType, constructorParams);
+			}
+			else if (this._instances.ContainsKey(scope))
+			{
+				// Already instantiated, return the old one
+				return this._instances[scope];
+			}
+			else
+			{
+				// Instantiate new object, save by scope
+				object instance = this.Get(binding.ImplementationType, constructorParams);
+				this._instances[scope] = instance;
+				return instance;
+			}
+		}
+
 		/// <summary>
-		/// Get Binding object that was bound to interface type.
+		/// Get Binding object that was bound to inherited type.
 		/// </summary>
 		/// <param name="i">Interface type to search for.</param>
-		/// <returns>Binding object that was bound to interface type.</returns>
-		private Binding GetBindingByInterface(Type i)
+		/// <returns>Binding object that was bound to inherited type.</returns>
+		private Binding GetBindingByInheritedType(Type i)
 		{
 			return _bindings.ContainsKey(i) ? _bindings[i] : null;
 		}

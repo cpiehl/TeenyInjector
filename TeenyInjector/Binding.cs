@@ -5,11 +5,11 @@ namespace TeenyInjector
 	public class Binding
 	{
 		private Type implementationType;
-
-		public bool IsSingletonScoped { get; private set; } = false;
+		private readonly TeenyKernel kernel;
+		private Func<TeenyKernel, object> scopeCallback;
 
 		/// <summary>
-		/// This binding's interface type.
+		/// This binding's inherited type.
 		/// </summary>
 		public Type InheritedType { get; private set; }
 
@@ -27,13 +27,16 @@ namespace TeenyInjector
 				if (this.InheritedType.IsAssignableFrom(value))
 					this.implementationType = value;
 				else
-					throw new ArgumentException($"Argument must inherit from interface {InheritedType.FullName}");
+					throw new ArgumentException($"Argument must inherit from {InheritedType.FullName}");
 			}
 		}
 
-		internal Binding(Type inheritedType)
+		public object Scope => this.scopeCallback?.Invoke(this.kernel);
+
+		internal Binding(Type inheritedType, TeenyKernel kernel)
 		{
 			this.InheritedType = inheritedType;
+			this.kernel = kernel;
 		}
 
 		/// <summary>
@@ -53,27 +56,42 @@ namespace TeenyInjector
 			return this;
 		}
 
-		//public Binding InTransientScope()
-		//{
-		//	this.IsSingletonScoped = false;
-		//	return this;
-		//}
+		public Binding InTransientScope()
+		{
+			this.scopeCallback = null;
+			return this;
+		}
 
-		//public Binding InSingletonScope()
-		//{
-		//	this.IsSingletonScoped = true;
-		//	return this;
-		//}
+		public Binding InSingletonScope()
+		{
+			this.scopeCallback = (_) => true;
+			return this;
+		}
 
-		//public Binding InScope(IDisposable scope)
-		//{
-		// Todo: we'll deal with this later...
-		//	return this;
-		//}
+		public Binding InScope(Func<TeenyKernel, object> scopeCallback)
+		{
+			this.scopeCallback = scopeCallback;
+			return this;
+		}
+
+		public Binding ToConstant(object value)
+		{
+			return this.ToMethod(() => value);
+		}
+
+		public Binding ToMethod(Func<object> func)
+		{
+			return this;
+		}
+
+		public void WhenInjectedInto<T>()
+		{
+
+		}
 	}
 
 	public class Binding<T> : Binding
 	{
-		public Binding() : base(typeof(T)) { }
+		public Binding(TeenyKernel kernel) : base(typeof(T), kernel) { }
 	}
 }
