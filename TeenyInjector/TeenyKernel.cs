@@ -10,6 +10,7 @@ namespace TeenyInjector
 	{
 		private Dictionary<Type, Binding> _bindings = new Dictionary<Type, Binding>();
 		private Dictionary<object, object> _instances = new Dictionary<object, object>();
+		internal Dictionary<Type, List<Binding>> BindingsLookup = new Dictionary<Type, List<Binding>>();
 
 		/// <summary>
 		/// Default. Bind all IKernelBindings found in executing assembly.
@@ -62,12 +63,12 @@ namespace TeenyInjector
 			Binding b = new Binding<T>(this);
 			Type inheritedType = typeof(T);
 
-			if (this._bindings.ContainsKey(inheritedType))
-			{
-				throw new Exception($"'{inheritedType}' is already bound to this kernel.");
-			}
+			//if (this._bindings.ContainsKey(inheritedType))
+			//{
+			//	throw new Exception($"'{inheritedType}' is already bound to this kernel.");
+			//}
 
-			this._bindings.Add(inheritedType, b);
+			this._bindings[inheritedType] = b;
 
 			return b;
 		}
@@ -87,92 +88,165 @@ namespace TeenyInjector
 		/// </summary>
 		/// <param name="t">Type to create.</param>
 		/// <returns>New instance of type t.</returns>
-		private object Get(Type t, Dictionary<string, object> constructorParams = null)
+		private object Get(Type t, Dictionary<string, object> constructorParams = null, Type requestingType = null)
 		{
 			if (constructorParams is null)
 			{
 				constructorParams = new Dictionary<string, object>();
 			}
-			else
-			{
 
-			}
-
-			if (t.IsInterface || t.IsAbstract)
+			Binding binding;
+			if (TryGetBindingByInheritedType(t, out binding))
 			{
-				return this.Get(GetBindingByInheritedType(t), constructorParams);
-			}
-			else if (t.IsClass)
-			{
-				ConstructorInfo defaultConstructorInfo = null;
-				ConstructorInfo[] constructors = t.GetConstructors();
-				foreach (ConstructorInfo ci in constructors)
+				if (binding.ImplementationType.IsClass)
 				{
-					ParameterInfo[] parameters = ci.GetParameters();
-
-					if (parameters.Length == 0)
+					object instance;
+					if (TryGetScopedInstance(binding, out instance, constructorParams))
 					{
-						defaultConstructorInfo = ci;
-						continue;
+						// Already instantiated, return the old one
+						return instance;
 					}
-
-					if (parameters.All(p => false
-						|| p.ParameterType.IsClass
-						|| p.ParameterType.IsPrimitive
-						|| GetBindingByInheritedType(p.ParameterType) != null
-					))
+					else
 					{
-						return ci.Invoke(parameters.Select(p =>
-						{
-							if (constructorParams.Any())
-								if (constructorParams.ContainsKey(p.Name))
-								{
-									return constructorParams[p.Name];
-								}
-							return this.Get(p.ParameterType, constructorParams);
-						}).ToArray());
+						// No instance yet, create a new one
+						return CreateInstance(binding, constructorParams, requestingType);
 					}
 				}
-				try
+				else if (t.IsPrimitive)
 				{
-					return defaultConstructorInfo.Invoke(new object[] { });
+					// Todo: handle ToMethod, ToConstant, etc
+					return Activator.CreateInstance(t);
 				}
-				catch (Exception ex)
+				else
 				{
-					throw; // Todo: don't know what to do with this yet
+					// interface or abstract class probably
+					return Get(binding.ImplementationType, constructorParams);
 				}
-			}
-			else if (t.IsPrimitive)
-			{
-				return Activator.CreateInstance(t);
 			}
 			else
 			{
-				throw new ArgumentException("Argument must not be an abstract class type");
+				// Todo: make this better
+				throw new Exception("Binding not found");
 			}
 		}
 
-		private object Get(Binding binding, Dictionary<string, object> constructorParams = null)
+		private bool HasScopedInstance(Binding binding)
 		{
-			if (binding is null) return null;
+			return false == (binding.Scope is null) && this._instances.ContainsKey(binding.Scope);
+		}
 
-			object scope = binding.Scope;
-			if (scope is null)
-			{
-				// No scope defined, equivalent to Transient
-				return this.Get(binding.ImplementationType, constructorParams);
-			}
-			else if (this._instances.ContainsKey(scope))
+		private bool TryGetScopedInstance(Binding binding, out object instance, Dictionary<string, object> constructorParams = null)
+		{
+			if (HasScopedInstance(binding))
 			{
 				// Already instantiated, return the old one
-				return this._instances[scope];
+				instance = this._instances[binding.Scope];
+				return true;
 			}
 			else
 			{
-				// Instantiate new object, save by scope
-				object instance = this.Get(binding.ImplementationType, constructorParams);
-				this._instances[scope] = instance;
+				instance = null;
+				return false;
+			}
+		}
+
+		private object CreateInstance(Binding binding, Dictionary<string, object> constructorParams, Type requestingType = null)
+		{
+			Type t = binding.ImplementationType;
+
+			if (requestingType is null)
+			{
+				requestingType = t;
+				//requestingType = binding.InjectedIntoType;
+			}
+
+			ConstructorInfo defaultConstructorInfo = null;
+
+			// Get all constructors, sorted by highest number of parameters first
+			// Naive, but simple to understand standard for prioritizing "most specific" constructor
+			IOrderedEnumerable<ConstructorInfo> constructors = t.GetConstructors()
+				.OrderByDescending(ctor => ctor.GetParameters().Length);
+
+			foreach (ConstructorInfo ci in constructors)
+			{
+				ParameterInfo[] parameters = ci.GetParameters();
+
+				if (parameters.Length == 0)
+				{
+					defaultConstructorInfo = ci;
+					continue;
+				}
+
+				// Find the first constructor where the kernel knows how to instantiate all parameters
+				Binding _binding;
+				bool canConstruct = parameters.All(p =>
+				{
+					//|| p.ParameterType.IsClass
+					if (p.ParameterType.IsPrimitive)
+					{
+						return true;
+					}
+					else if (TryGetBindingByInheritedType(p.ParameterType, out _binding))
+					{
+						return _binding.InjectedIntoType == requestingType;
+					}
+					else
+					{
+						return false;
+					}
+				});
+
+				if (canConstruct)
+				{
+					object instance = ci.Invoke(parameters.Select(p =>
+					{
+						if (constructorParams.Any())
+						{
+							if (constructorParams.ContainsKey(p.Name))
+							{
+								return constructorParams[p.Name];
+							}
+						}
+						return this.Get(p.ParameterType, constructorParams, t);
+					}).ToArray());
+
+					TryAddBindingInstance(binding, instance);
+
+					return instance;
+				}
+			}
+			try
+			{
+				if (false == (binding.InjectedIntoType is null) && binding.InjectedIntoType != requestingType)
+				{
+					// Todo: make this better
+					throw new Exception("Binding not found");
+				}
+
+				// No non-default constructors could be satisfied, try the default
+				object instance = defaultConstructorInfo.Invoke(new object[] { });
+
+				TryAddBindingInstance(binding, instance);
+
 				return instance;
+			}
+			catch (Exception ex)
+			{
+				// If no default constructor, defaultConstructorInfo will throw NullReferenceException
+				throw; // Todo: don't know what to do with this yet
+			}
+		}
+
+		private bool TryAddBindingInstance(Binding binding, object instance)
+		{
+			if (false == (binding.Scope is null))
+			{
+				this._instances[binding.Scope] = instance;
+				return true;
+			}
+			else
+			{
+				return false;
 			}
 		}
 
@@ -180,10 +254,20 @@ namespace TeenyInjector
 		/// Get Binding object that was bound to inherited type.
 		/// </summary>
 		/// <param name="i">Interface type to search for.</param>
-		/// <returns>Binding object that was bound to inherited type.</returns>
-		private Binding GetBindingByInheritedType(Type i)
+		/// <param name="binding">Binding object that was bound to inherited type.</param>
+		/// <returns>True if Binding was found.</returns>
+		private bool TryGetBindingByInheritedType(Type i, out Binding binding)
 		{
-			return _bindings.ContainsKey(i) ? _bindings[i] : null;
+			if (this._bindings.ContainsKey(i))
+			{
+				binding = this._bindings[i];
+				return true;
+			}
+			else
+			{
+				binding = null;
+				return false;
+			}
 		}
 
 		/// <summary>
@@ -195,6 +279,11 @@ namespace TeenyInjector
 		private static IEnumerable<Type> FindDerivedTypes(Assembly assembly, Type baseType)
 		{
 			return assembly.GetTypes().Where(t => t != baseType && baseType.IsAssignableFrom(t));
+		}
+
+		private bool Release(object scope)
+		{
+			return this._instances.Remove(scope);
 		}
 	}
 }

@@ -23,9 +23,8 @@ namespace TeenyInjector.Tests
 		public void ObjectFromClass()
 		{
 			TeenyKernel kernel = new TeenyKernel();
-			kernel.Bind<Interface1>().To<Class1>();
 
-			Interface1 test1 = kernel.Get<Class1>();
+			Class1 test1 = kernel.Get<Class1>();
 
 			Assert.IsNotNull(test1);
 			Assert.AreEqual(test1.Test(), "Hello World!");
@@ -48,9 +47,10 @@ namespace TeenyInjector.Tests
 		{
 			TeenyKernel kernel = new TeenyKernel();
 
-			Interface1 test1 = kernel.Get<Interface1>();
-
-			Assert.IsNull(test1);
+			Assert.ThrowsException<Exception>(() =>
+			{
+				Interface1 test1 = kernel.Get<Interface1>();
+			});
 		}
 	}
 }

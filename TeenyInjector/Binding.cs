@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace TeenyInjector
 {
@@ -7,6 +8,7 @@ namespace TeenyInjector
 		private Type implementationType;
 		private readonly TeenyKernel kernel;
 		private Func<TeenyKernel, object> scopeCallback;
+		private Func<object> valueFunction;
 
 		/// <summary>
 		/// This binding's inherited type.
@@ -31,6 +33,8 @@ namespace TeenyInjector
 			}
 		}
 
+		public Type InjectedIntoType { get; private set; }
+
 		public object Scope => this.scopeCallback?.Invoke(this.kernel);
 
 		internal Binding(Type inheritedType, TeenyKernel kernel)
@@ -47,12 +51,14 @@ namespace TeenyInjector
 		public Binding To<T>()
 		{
 			this.ImplementationType = typeof(T);
+			UpdateBindingsLookup();
 			return this;
 		}
 
 		public Binding ToSelf()
 		{
 			this.ImplementationType = this.InheritedType;
+			UpdateBindingsLookup();
 			return this;
 		}
 
@@ -81,12 +87,23 @@ namespace TeenyInjector
 
 		public Binding ToMethod(Func<object> func)
 		{
+			this.valueFunction = func;
 			return this;
 		}
 
-		public void WhenInjectedInto<T>()
+		public Binding WhenInjectedInto<T>()
 		{
+			this.InjectedIntoType = typeof(T);
+			return this;
+		}
 
+		private void UpdateBindingsLookup()
+		{
+			if (false == this.kernel.BindingsLookup.ContainsKey(this.ImplementationType))
+			{
+				this.kernel.BindingsLookup.Add(this.implementationType, new List<Binding>());
+			}
+			this.kernel.BindingsLookup[this.ImplementationType].Add(this);
 		}
 	}
 

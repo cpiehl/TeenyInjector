@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace TeenyInjector.Tests.Interfaces
 {
-	class Class5 : Interface1
+	class Class5
 	{
 		private readonly Interface1 test;
 
