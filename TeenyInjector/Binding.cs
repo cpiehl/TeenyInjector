@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace TeenyInjector
 {
@@ -56,15 +55,12 @@ namespace TeenyInjector
 		internal Binding To(Type implementationType)
 		{
 			this.ImplementationType = implementationType;
-			UpdateBindingsLookup();
 			return this;
 		}
 
 		public Binding ToSelf()
 		{
-			this.ImplementationType = this.InheritedType;
-			UpdateBindingsLookup();
-			return this;
+			return To(this.InheritedType);
 		}
 
 		public Binding InTransientScope()
@@ -100,15 +96,6 @@ namespace TeenyInjector
 		{
 			this.InjectedIntoType = typeof(T);
 			return this;
-		}
-
-		private void UpdateBindingsLookup()
-		{
-			if (false == this.kernel.BindingsLookup.ContainsKey(this.ImplementationType))
-			{
-				this.kernel.BindingsLookup.Add(this.implementationType, new List<Binding>());
-			}
-			this.kernel.BindingsLookup[this.ImplementationType].Add(this);
 		}
 	}
 

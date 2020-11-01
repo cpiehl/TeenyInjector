@@ -61,6 +61,7 @@
     <Compile Include="InstantiationTests.cs" />
     <Compile Include="BindingTests.cs" />
     <Compile Include="ScopeTests.cs" />
+    <Compile Include="MultiInjectionTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

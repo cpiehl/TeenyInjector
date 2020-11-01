@@ -8,9 +8,8 @@ namespace TeenyInjector
 {
 	public class TeenyKernel
 	{
-		private Dictionary<Type, Binding> _bindings = new Dictionary<Type, Binding>();
+		private Dictionary<Type, List<Binding>> _bindings = new Dictionary<Type, List<Binding>>();
 		private Dictionary<object, object> _instances = new Dictionary<object, object>();
-		internal Dictionary<Type, List<Binding>> BindingsLookup = new Dictionary<Type, List<Binding>>();
 
 		public bool AutoBindEnabled { get; set; } = true;
 
@@ -69,7 +68,11 @@ namespace TeenyInjector
 		{
 			Binding b = new Binding(inheritedType, this);
 
-			this._bindings[inheritedType] = b;
+			if (false == this._bindings.ContainsKey(inheritedType))
+			{
+				this._bindings[inheritedType] = new List<Binding>();
+			}
+			this._bindings[inheritedType].Add(b);
 
 			return b;
 		}
@@ -91,49 +94,65 @@ namespace TeenyInjector
 		/// <returns>New instance of type t.</returns>
 		private object Get(Type t, Dictionary<string, object> constructorParams = null, Type requestingType = null)
 		{
+			return GetAll(t, constructorParams, requestingType).Single();
+		}
+
+		public IEnumerable<T> GetAll<T>(Dictionary<string, object> constructorParams = null, Type requestingType = null)
+		{
+			IEnumerable<object> results = GetAll(typeof(T), constructorParams, requestingType);
+			return results.Select(r => (T)r);
+		}
+
+		private IEnumerable<object> GetAll(Type t, Dictionary<string, object> constructorParams = null, Type requestingType = null)
+		{
 			if (constructorParams is null)
 			{
 				constructorParams = new Dictionary<string, object>();
 			}
 
-			Binding binding;
-			if (TryGetBindingByInheritedType(t, out binding))
+			List<Binding> bindings;
+			if (TryGetBindingsByInheritedType(t, out bindings))
 			{
-				if (binding.ImplementationType.IsClass)
-				{
-					object instance;
-					if (TryGetScopedInstance(binding, out instance, constructorParams))
-					{
-						// Already instantiated, return the old one
-						return instance;
-					}
-					else
-					{
-						// No instance yet, create a new one
-						return CreateInstance(binding, constructorParams, requestingType);
-					}
-				}
-				else if (t.IsPrimitive)
-				{
-					// Todo: handle ToMethod, ToConstant, etc
-					return Activator.CreateInstance(t);
-				}
-				else
-				{
-					// interface or abstract class probably
-					return Get(binding.ImplementationType, constructorParams);
-				}
+				return bindings.Select(binding => Get(binding, t, constructorParams, requestingType));
 			}
 			else if (this.AutoBindEnabled && t.IsClass)
 			{
 				// Auto create new Binding for this Type
 				this.Bind(t).To(t);
-				return Get(t, constructorParams, requestingType);
+				return new[] { Get(t, constructorParams, requestingType) };
 			}
 			else
 			{
 				// Todo: make this better
 				throw new Exception("Binding not found");
+			}
+		}
+
+		private object Get(Binding binding, Type t, Dictionary<string, object> constructorParams = null, Type requestingType = null)
+		{
+			if (binding.ImplementationType.IsClass)
+			{
+				object instance;
+				if (TryGetScopedInstance(binding, out instance, constructorParams))
+				{
+					// Already instantiated, return the old one
+					return instance;
+				}
+				else
+				{
+					// No instance yet, create a new one
+					return CreateInstance(binding, constructorParams, requestingType);
+				}
+			}
+			else if (t.IsPrimitive)
+			{
+				// Todo: handle ToMethod, ToConstant, etc
+				return Activator.CreateInstance(t);
+			}
+			else
+			{
+				// interface or abstract class probably
+				return Get(binding.ImplementationType, constructorParams);
 			}
 		}
 
@@ -265,14 +284,21 @@ namespace TeenyInjector
 		/// <returns>True if Binding was found.</returns>
 		private bool TryGetBindingByInheritedType(Type i, out Binding binding)
 		{
+			bool result = TryGetBindingsByInheritedType(i, out List<Binding> bindings);
+			binding = bindings?.FirstOrDefault(); // Todo: other conditions?
+			return result;
+		}
+
+		private bool TryGetBindingsByInheritedType(Type i, out List<Binding> bindings)
+		{
 			if (this._bindings.ContainsKey(i))
 			{
-				binding = this._bindings[i];
+				bindings = this._bindings[i];
 				return true;
 			}
 			else
 			{
-				binding = null;
+				bindings = null;
 				return false;
 			}
 		}
