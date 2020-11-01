@@ -125,8 +125,7 @@ namespace TeenyInjector
 
 		public IEnumerable<T> GetAll<T>(Dictionary<string, object> constructorParams = null, Type requestingType = null)
 		{
-			IEnumerable<object> results = GetAll(typeof(T), constructorParams, requestingType);
-			return results.Select(r => (T)r);
+			return GetAll(typeof(T), constructorParams, requestingType).Select(r => (T)r);
 		}
 
 		private IEnumerable<object> GetAll(Type t, Dictionary<string, object> constructorParams = null, Type requestingType = null)
@@ -139,7 +138,10 @@ namespace TeenyInjector
 			List<Binding> bindings;
 			if (TryGetBindingsByInheritedType(t, out bindings))
 			{
-				return bindings.Select(binding => Get(binding, t, constructorParams, requestingType));
+				return bindings
+					.Where(binding => binding.InjectedIntoType is null || binding.InjectedIntoType == requestingType)
+					.Select(binding => Get(binding, t, constructorParams, requestingType))
+				;
 			}
 			else if (this.AutoBindEnabled && t.IsClass)
 			{
