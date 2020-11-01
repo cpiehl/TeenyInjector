@@ -16,7 +16,7 @@ namespace TeenyInjector
 		/// <summary>
 		/// Default. Bind all IKernelBindings found in executing assembly.
 		/// </summary>
-		public TeenyKernel() : this(Assembly.GetExecutingAssembly()) { }
+		public TeenyKernel() { }
 
 		/// <summary>
 		/// Bind this single IKernelBindings to kernel.
@@ -30,27 +30,9 @@ namespace TeenyInjector
 		/// <param name="kernelBindings">List of IKernelBindings to bind to kernel.</param>
 		public TeenyKernel(IEnumerable<IKernelBindings> kernelBindings)
 		{
-			BindBindingsList(kernelBindings.Select(b => b.GetType()));
-		}
-
-		/// <summary>
-		/// Bind all types configured in all objects implementing IKernelBindings found in Assembly to this TeenyKernel.
-		/// </summary>
-		/// <param name="assembly">Assembly to search for IKernelBindings implementations.</param>
-		public TeenyKernel(Assembly assembly)
-		{
-			BindBindingsList(FindDerivedTypes(assembly, typeof(IKernelBindings)));
-		}
-
-		/// <summary>
-		/// Bind all types configured in all objects implementing IKernelBindings found in input list to this TeenyKernel.
-		/// </summary>
-		/// <param name="bindings">List of Types implementing IKernelBindings.</param>
-		private void BindBindingsList(IEnumerable<Type> bindings)
-		{
-			foreach (Type binding in bindings)
+			foreach (IKernelBindings binding in kernelBindings)
 			{
-				((IKernelBindings)this.Get(binding)).Init(this);
+				binding.Init(this);
 			}
 		}
 
@@ -248,7 +230,7 @@ namespace TeenyInjector
 					}
 					else if (TryGetBindingByInheritedType(p.ParameterType, out _binding))
 					{
-						return _binding.InjectedIntoType == requestingType;
+						return _binding.InjectedIntoType is null || _binding.InjectedIntoType == requestingType;
 					}
 					else
 					{
