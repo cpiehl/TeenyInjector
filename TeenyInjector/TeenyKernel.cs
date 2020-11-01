@@ -77,6 +77,12 @@ namespace TeenyInjector
 			return b;
 		}
 
+		public Binding Rebind<T>()
+		{
+			this._bindings.Remove(typeof(T));
+			return Bind<T>();
+		}
+
 		/// <summary>
 		/// Create and return an instance of type T.
 		/// </summary>
@@ -94,7 +100,27 @@ namespace TeenyInjector
 		/// <returns>New instance of type t.</returns>
 		private object Get(Type t, Dictionary<string, object> constructorParams = null, Type requestingType = null)
 		{
-			return GetAll(t, constructorParams, requestingType).Single();
+			if (constructorParams is null)
+			{
+				constructorParams = new Dictionary<string, object>();
+			}
+
+			Binding binding;
+			if (TryGetBindingByInheritedType(t, out binding))
+			{
+				return Get(binding, t, constructorParams, requestingType);
+			}
+			else if (this.AutoBindEnabled && t.IsClass)
+			{
+				// Auto create new Binding for this Type
+				this.Bind(t).To(t);
+				return Get(t, constructorParams, requestingType);
+			}
+			else
+			{
+				// Todo: make this better
+				throw new Exception("Binding not found");
+			}
 		}
 
 		public IEnumerable<T> GetAll<T>(Dictionary<string, object> constructorParams = null, Type requestingType = null)
@@ -130,7 +156,7 @@ namespace TeenyInjector
 
 		private object Get(Binding binding, Type t, Dictionary<string, object> constructorParams = null, Type requestingType = null)
 		{
-			if (binding.ImplementationType.IsClass)
+			if (binding.ImplementationType?.IsClass != false)
 			{
 				object instance;
 				if (TryGetScopedInstance(binding, out instance, constructorParams))
@@ -152,21 +178,23 @@ namespace TeenyInjector
 			else
 			{
 				// interface or abstract class probably
-				return Get(binding.ImplementationType, constructorParams);
+				return Get(binding.ImplementationType, constructorParams, requestingType);
 			}
 		}
 
-		private bool HasScopedInstance(Binding binding)
+		private bool HasScopedInstance(object scope)
 		{
-			return false == (binding.Scope is null) && this._instances.ContainsKey(binding.Scope);
+			return false == (scope is null) && this._instances.ContainsKey(scope);
 		}
 
 		private bool TryGetScopedInstance(Binding binding, out object instance, Dictionary<string, object> constructorParams = null)
 		{
-			if (HasScopedInstance(binding))
+			object scope = binding.Scope;
+
+			if (HasScopedInstance(scope))
 			{
 				// Already instantiated, return the old one
-				instance = this._instances[binding.Scope];
+				instance = this._instances[scope];
 				return true;
 			}
 			else
@@ -178,12 +206,16 @@ namespace TeenyInjector
 
 		private object CreateInstance(Binding binding, Dictionary<string, object> constructorParams, Type requestingType = null)
 		{
+			if (false == (binding.ValueFunction is null))
+			{
+				return binding.ValueFunction.Invoke(this);
+			}
+
 			Type t = binding.ImplementationType;
 
 			if (requestingType is null)
 			{
 				requestingType = t;
-				//requestingType = binding.InjectedIntoType;
 			}
 
 			ConstructorInfo defaultConstructorInfo = null;
@@ -207,7 +239,6 @@ namespace TeenyInjector
 				Binding _binding;
 				bool canConstruct = parameters.All(p =>
 				{
-					//|| p.ParameterType.IsClass
 					if (p.ParameterType.IsPrimitive)
 					{
 						return true;
@@ -265,9 +296,10 @@ namespace TeenyInjector
 
 		private bool TryAddBindingInstance(Binding binding, object instance)
 		{
-			if (false == (binding.Scope is null))
+			object scope = binding.Scope;
+			if (false == (scope is null))
 			{
-				this._instances[binding.Scope] = instance;
+				this._instances[scope] = instance;
 				return true;
 			}
 			else

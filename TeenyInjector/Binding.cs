@@ -6,13 +6,11 @@ namespace TeenyInjector
 	{
 		private Type implementationType;
 		private readonly TeenyKernel kernel;
-		private Func<TeenyKernel, object> scopeCallback;
-		private Func<object> valueFunction;
 
 		/// <summary>
 		/// This binding's inherited type.
 		/// </summary>
-		public Type InheritedType { get; private set; }
+		public Type InheritedType { get; protected set; }
 
 		/// <summary>
 		/// This binding's implementation type.
@@ -23,7 +21,7 @@ namespace TeenyInjector
 			{
 				return this.implementationType;
 			}
-			private set
+			protected set
 			{
 				if (this.InheritedType.IsAssignableFrom(value))
 					this.implementationType = value;
@@ -32,9 +30,11 @@ namespace TeenyInjector
 			}
 		}
 
-		public Type InjectedIntoType { get; private set; }
+		public Type InjectedIntoType { get; protected set; }
 
-		public object Scope => this.scopeCallback?.Invoke(this.kernel);
+		public object Scope => this.ScopeCallback?.Invoke(this.kernel);
+		internal Func<TeenyKernel, object> ScopeCallback { get; set; }
+		internal Func<TeenyKernel, object> ValueFunction { get; set; }
 
 		internal Binding(Type inheritedType, TeenyKernel kernel)
 		{
@@ -65,30 +65,30 @@ namespace TeenyInjector
 
 		public Binding InTransientScope()
 		{
-			this.scopeCallback = null;
+			this.ScopeCallback = null;
 			return this;
 		}
 
 		public Binding InSingletonScope()
 		{
-			this.scopeCallback = (_) => true;
+			this.ScopeCallback = (_) => true;
 			return this;
 		}
 
 		public Binding InScope(Func<TeenyKernel, object> scopeCallback)
 		{
-			this.scopeCallback = scopeCallback;
+			this.ScopeCallback = scopeCallback;
 			return this;
 		}
 
 		public Binding ToConstant(object value)
 		{
-			return this.ToMethod(() => value);
+			return this.ToMethod((ctx) => value);
 		}
 
-		public Binding ToMethod(Func<object> func)
+		public Binding ToMethod(Func<TeenyKernel, object> func)
 		{
-			this.valueFunction = func;
+			this.ValueFunction = func;
 			return this;
 		}
 

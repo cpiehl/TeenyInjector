@@ -63,5 +63,43 @@ namespace TeenyInjector.Tests
 				Interface1 test1 = kernel.Get<Interface1>();
 			});
 		}
+
+		[TestMethod]
+		public void ToConstant()
+		{
+			TeenyKernel kernel = new TeenyKernel();
+
+			Class4 class4 = new Class4();
+
+			kernel.Bind<Interface1>().ToConstant(class4);
+
+			Interface1 test1 = kernel.Get<Interface1>();
+			Interface1 test2 = kernel.Get<Interface1>();
+
+			Assert.AreEqual(test1.Test(), test2.Test());
+		}
+
+		[TestMethod]
+		public void ToMethod()
+		{
+			TeenyKernel kernel = new TeenyKernel();
+
+			Class4 class4 = new Class4();
+
+			kernel.Bind<Interface1>().ToMethod(ctx => class4);
+
+			Interface1 test1 = kernel.Get<Interface1>();
+			Interface1 test2 = kernel.Get<Interface1>();
+
+			Assert.AreEqual(test1.Test(), test2.Test());
+
+			// Rebind with new method
+			kernel.Rebind<Interface1>().ToMethod(ctx => new Class4());
+
+			Interface1 test3 = kernel.Get<Interface1>();
+			Interface1 test4 = kernel.Get<Interface1>();
+
+			Assert.AreNotEqual(test3.Test(), test4.Test());
+		}
 	}
 }
