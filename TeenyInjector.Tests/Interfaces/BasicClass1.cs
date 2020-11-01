@@ -1,7 +1,7 @@
 ﻿
 namespace TeenyInjector.Tests.Interfaces
 {
-	public class Class1 : Interface1
+	public class BasicClass1 : Interface1
 	{
 		public string Test()
 		{

@@ -49,11 +49,11 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Interfaces\Class1.cs" />
-    <Compile Include="Interfaces\Class2.cs" />
+    <Compile Include="Interfaces\BasicClass1.cs" />
+    <Compile Include="Interfaces\BasicClass2.cs" />
     <Compile Include="Interfaces\Class3.cs" />
-    <Compile Include="Interfaces\Class4.cs" />
-    <Compile Include="Interfaces\Class5.cs" />
+    <Compile Include="Interfaces\RandomIdClass.cs" />
+    <Compile Include="Interfaces\ReverseClass.cs" />
     <Compile Include="Interfaces\Interface1.cs" />
     <Compile Include="Interfaces\AbstractClass3.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

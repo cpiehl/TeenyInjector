@@ -10,7 +10,7 @@ namespace TeenyInjector.Tests
 		public void TestTransient()
 		{
 			TeenyKernel kernel = new TeenyKernel();
-			kernel.Bind<Interface1>().To<Class4>().InTransientScope(); // default, optional
+			kernel.Bind<Interface1>().To<RandomIdClass>().InTransientScope(); // default, optional
 
 			Interface1 test1 = kernel.Get<Interface1>();
 			Interface1 test2 = kernel.Get<Interface1>();
@@ -22,7 +22,7 @@ namespace TeenyInjector.Tests
 		public void TestSingleton()
 		{
 			TeenyKernel kernel = new TeenyKernel();
-			kernel.Bind<Interface1>().To<Class4>().InSingletonScope();
+			kernel.Bind<Interface1>().To<RandomIdClass>().InSingletonScope();
 
 			Interface1 test1 = kernel.Get<Interface1>();
 			Interface1 test2 = kernel.Get<Interface1>();
@@ -36,7 +36,7 @@ namespace TeenyInjector.Tests
 			int scope = 1; // can be any object
 
 			TeenyKernel kernel = new TeenyKernel();
-			kernel.Bind<Interface1>().To<Class4>().InScope((_) => scope);
+			kernel.Bind<Interface1>().To<RandomIdClass>().InScope((_) => scope);
 
 			Interface1 test1 = kernel.Get<Interface1>();
 			Interface1 test2 = kernel.Get<Interface1>();

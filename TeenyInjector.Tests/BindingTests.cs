@@ -7,23 +7,26 @@ namespace TeenyInjector.Tests
 	[TestClass]
 	public class BindingTests
 	{
-		//[TestMethod]
-		//public void DuplicateBinding()
-		//{
-		//	TeenyKernel kernel = new TeenyKernel();
+		[TestMethod]
+		public void DuplicateBinding()
+		{
+			TeenyKernel kernel = new TeenyKernel();
 
-		//	Assert.ThrowsException<Exception>(() =>
-		//	{
-		//		kernel.Bind<Interface1>().To<Class1>();
-		//		kernel.Bind<Interface1>().To<Class2>();
-		//	});
-		//}
+			kernel.Bind<Interface1>().To<BasicClass1>();
+			kernel.Bind<Interface1>().To<BasicClass2>();
+
+			// Todo: I want this to be regular Exception to match the others
+			Assert.ThrowsException<InvalidOperationException>(() =>
+			{
+				Interface1 test1 = kernel.Get<Interface1>();
+			});
+		}
 
 		[TestMethod]
 		public void NoBoundInterface()
 		{
 			TeenyKernel kernel = new TeenyKernel();
-			kernel.Bind<Interface1>().To<Class1>().WhenInjectedInto<Class5>();
+			kernel.Bind<Interface1>().To<BasicClass1>().WhenInjectedInto<ReverseClass>();
 
 			Assert.ThrowsException<Exception>(() =>
 			{
@@ -35,18 +38,18 @@ namespace TeenyInjector.Tests
 		public void WhenInjectedInto()
 		{
 			TeenyKernel kernel = new TeenyKernel();
-			kernel.Bind<Interface1>().To<Class1>().WhenInjectedInto<Class5>();
-			kernel.Bind<Class5>().ToSelf();
+			kernel.Bind<Interface1>().To<BasicClass1>().WhenInjectedInto<ReverseClass>();
+			kernel.Bind<ReverseClass>().ToSelf();
 
 			Assert.ThrowsException<Exception>(() =>
 			{
 				Interface1 test1 = kernel.Get<Interface1>();
 			});
-			Class5 test5 = kernel.Get<Class5>();
+			ReverseClass test2 = kernel.Get<ReverseClass>();
 
-			Assert.IsNotNull(test5);
+			Assert.IsNotNull(test2);
 
-			Assert.AreEqual(test5.Test(), "!dlroW olleH");
+			Assert.AreEqual(test2.Test(), "!dlroW olleH");
 		}
 	}
 }

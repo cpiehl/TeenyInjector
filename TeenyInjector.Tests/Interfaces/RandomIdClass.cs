@@ -2,7 +2,7 @@
 
 namespace TeenyInjector.Tests.Interfaces
 {
-	class Class4 : Interface1
+	class RandomIdClass : Interface1
 	{
 		private Guid Guid = Guid.NewGuid();
 

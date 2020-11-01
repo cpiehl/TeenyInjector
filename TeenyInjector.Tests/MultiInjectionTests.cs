@@ -13,8 +13,8 @@ namespace TeenyInjector.Tests
 		{
 			TeenyKernel kernel = new TeenyKernel();
 
-			kernel.Bind<Interface1>().To<Class1>();
-			kernel.Bind<Interface1>().To<Class2>();
+			kernel.Bind<Interface1>().To<BasicClass1>();
+			kernel.Bind<Interface1>().To<BasicClass2>();
 
 			IEnumerable<Interface1> interfaces = kernel.GetAll<Interface1>();
 
@@ -27,9 +27,9 @@ namespace TeenyInjector.Tests
 		{
 			TeenyKernel kernel = new TeenyKernel();
 
-			kernel.Bind<Interface1>().To<Class1>();
-			kernel.Bind<Interface1>().To<Class2>();
-			kernel.Bind<Interface1>().To<Class4>().WhenInjectedInto<Class5>();
+			kernel.Bind<Interface1>().To<BasicClass1>();
+			kernel.Bind<Interface1>().To<BasicClass2>();
+			kernel.Bind<Interface1>().To<RandomIdClass>().WhenInjectedInto<ReverseClass>();
 
 			IEnumerable<Interface1> interfaces = kernel.GetAll<Interface1>();
 
@@ -42,11 +42,11 @@ namespace TeenyInjector.Tests
 		{
 			TeenyKernel kernel = new TeenyKernel();
 
-			Class4 class4 = new Class4();
+			RandomIdClass class4 = new RandomIdClass();
 
 			kernel.Bind<Interface1>().ToConstant(class4);
-			kernel.Bind<Interface1>().ToMethod(ctx => class4);
-			kernel.Bind<Interface1>().ToMethod(ctx => new Class4());
+			kernel.Bind<Interface1>().ToMethod(_ => class4);
+			kernel.Bind<Interface1>().ToMethod(_ => new RandomIdClass());
 
 			IEnumerable<Interface1> interfaces = kernel.GetAll<Interface1>();
 

@@ -135,7 +135,7 @@ namespace TeenyInjector
 				constructorParams = new Dictionary<string, object>();
 			}
 
-			List<Binding> bindings;
+			IEnumerable<Binding> bindings;
 			if (TryGetBindingsByInheritedType(t, out bindings))
 			{
 				return bindings
@@ -161,7 +161,7 @@ namespace TeenyInjector
 			if (binding.ImplementationType?.IsClass != false)
 			{
 				object instance;
-				if (TryGetScopedInstance(binding, out instance, constructorParams))
+				if (TryGetScopedInstance(binding, out instance))
 				{
 					// Already instantiated, return the old one
 					return instance;
@@ -189,7 +189,7 @@ namespace TeenyInjector
 			return false == (scope is null) && this._instances.ContainsKey(scope);
 		}
 
-		private bool TryGetScopedInstance(Binding binding, out object instance, Dictionary<string, object> constructorParams = null)
+		private bool TryGetScopedInstance(Binding binding, out object instance)
 		{
 			object scope = binding.Scope;
 
@@ -208,6 +208,7 @@ namespace TeenyInjector
 
 		private object CreateInstance(Binding binding, Dictionary<string, object> constructorParams, Type requestingType = null)
 		{
+			// If ValueFunction is defined, return its result
 			if (false == (binding.ValueFunction is null))
 			{
 				return binding.ValueFunction.Invoke(this);
@@ -318,12 +319,12 @@ namespace TeenyInjector
 		/// <returns>True if Binding was found.</returns>
 		private bool TryGetBindingByInheritedType(Type i, out Binding binding)
 		{
-			bool result = TryGetBindingsByInheritedType(i, out List<Binding> bindings);
-			binding = bindings?.FirstOrDefault(); // Todo: other conditions?
+			bool result = TryGetBindingsByInheritedType(i, out IEnumerable<Binding> bindings);
+			binding = bindings?.SingleOrDefault(); // Todo: other conditions?
 			return result;
 		}
 
-		private bool TryGetBindingsByInheritedType(Type i, out List<Binding> bindings)
+		private bool TryGetBindingsByInheritedType(Type i, out IEnumerable<Binding> bindings)
 		{
 			if (this._bindings.ContainsKey(i))
 			{

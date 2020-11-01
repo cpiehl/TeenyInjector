@@ -11,7 +11,7 @@ namespace TeenyInjector.Tests
 		public void ObjectFromInterface()
 		{
 			TeenyKernel kernel = new TeenyKernel();
-			kernel.Bind<Interface1>().To<Class1>();
+			kernel.Bind<Interface1>().To<BasicClass1>();
 
 			Interface1 test1 = kernel.Get<Interface1>();
 
@@ -29,13 +29,13 @@ namespace TeenyInjector.Tests
 
 			Assert.ThrowsException<Exception>(() =>
 			{
-				Class1 test2 = kernel.Get<Class1>();
+				BasicClass1 test2 = kernel.Get<BasicClass1>();
 			});
 
 			// enable autobind and try again
 			kernel.AutoBindEnabled = true;
 
-			Class1 test1 = kernel.Get<Class1>();
+			BasicClass1 test1 = kernel.Get<BasicClass1>();
 
 			Assert.IsNotNull(test1);
 			Assert.AreEqual(test1.Test(), "Hello World!");
@@ -69,7 +69,7 @@ namespace TeenyInjector.Tests
 		{
 			TeenyKernel kernel = new TeenyKernel();
 
-			Class4 class4 = new Class4();
+			RandomIdClass class4 = new RandomIdClass();
 
 			kernel.Bind<Interface1>().ToConstant(class4);
 
@@ -84,9 +84,9 @@ namespace TeenyInjector.Tests
 		{
 			TeenyKernel kernel = new TeenyKernel();
 
-			Class4 class4 = new Class4();
+			RandomIdClass class4 = new RandomIdClass();
 
-			kernel.Bind<Interface1>().ToMethod(ctx => class4);
+			kernel.Bind<Interface1>().ToMethod(_ => class4);
 
 			Interface1 test1 = kernel.Get<Interface1>();
 			Interface1 test2 = kernel.Get<Interface1>();
@@ -94,7 +94,7 @@ namespace TeenyInjector.Tests
 			Assert.AreEqual(test1.Test(), test2.Test());
 
 			// Rebind with new method
-			kernel.Rebind<Interface1>().ToMethod(ctx => new Class4());
+			kernel.Rebind<Interface1>().ToMethod(_ => new RandomIdClass());
 
 			Interface1 test3 = kernel.Get<Interface1>();
 			Interface1 test4 = kernel.Get<Interface1>();

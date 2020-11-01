@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace TeenyInjector.Tests.Interfaces
 {
-	class Class5
+	class ReverseClass
 	{
 		private readonly Interface1 test;
 
-		public Class5(Interface1 test)
+		public ReverseClass(Interface1 test)
 		{
 			this.test = test;
 		}
