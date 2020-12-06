@@ -26,7 +26,8 @@ namespace TeenyInjector.Tests
 		public void NoBoundInterface()
 		{
 			TeenyKernel kernel = new TeenyKernel();
-			kernel.Bind<Interface1>().To<BasicClass1>().WhenInjectedInto<ReverseClass>();
+			kernel.Bind<Interface1>().To<BasicClass1>()
+				.WhenInjectedInto<ReverseClass>();
 
 			Assert.ThrowsException<Exception>(() =>
 			{
@@ -38,9 +39,11 @@ namespace TeenyInjector.Tests
 		public void WhenInjectedInto()
 		{
 			TeenyKernel kernel = new TeenyKernel();
-			kernel.Bind<Interface1>().To<BasicClass1>().WhenInjectedInto<ReverseClass>();
+			kernel.Bind<Interface1>().To<BasicClass1>()
+				.WhenInjectedInto<ReverseClass>();
 			kernel.Bind<ReverseClass>().ToSelf();
 
+			// Interface1 is only bound when injected into ReverseClass
 			Assert.ThrowsException<Exception>(() =>
 			{
 				Interface1 test1 = kernel.Get<Interface1>();
@@ -49,6 +52,7 @@ namespace TeenyInjector.Tests
 
 			Assert.IsNotNull(test2);
 
+			// ReverseClass reverses the output of its injected Interface1
 			Assert.AreEqual(test2.Test(), "!dlroW olleH");
 		}
 	}

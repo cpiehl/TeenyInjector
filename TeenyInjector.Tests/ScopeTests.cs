@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using TeenyInjector.Tests.Interfaces;
 
 namespace TeenyInjector.Tests
@@ -24,8 +25,32 @@ namespace TeenyInjector.Tests
 			TeenyKernel kernel = new TeenyKernel();
 			kernel.Bind<Interface1>().To<RandomIdClass>().InSingletonScope();
 
+			// test the same instance is created
 			Interface1 test1 = kernel.Get<Interface1>();
 			Interface1 test2 = kernel.Get<Interface1>();
+
+			Assert.AreEqual(test1.Test(), test2.Test());
+
+			// test both references to the same object
+			test1.Guid = Guid.NewGuid();
+
+			Assert.AreEqual(test1.Test(), test2.Test());
+		}
+
+		[TestMethod]
+		public void TestSingleton_ToMethod()
+		{
+			TeenyKernel kernel = new TeenyKernel();
+			kernel.Bind<Interface1>().ToMethod(krn => new RandomIdClass()).InSingletonScope();
+
+			// test the same instance is created
+			Interface1 test1 = kernel.Get<Interface1>();
+			Interface1 test2 = kernel.Get<Interface1>();
+
+			Assert.AreEqual(test1.Test(), test2.Test());
+
+			// test both references to the same object
+			test1.Guid = Guid.NewGuid();
 
 			Assert.AreEqual(test1.Test(), test2.Test());
 		}

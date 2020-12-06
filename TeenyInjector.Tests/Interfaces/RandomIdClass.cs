@@ -4,7 +4,7 @@ namespace TeenyInjector.Tests.Interfaces
 {
 	class RandomIdClass : Interface1
 	{
-		private Guid Guid = Guid.NewGuid();
+		public Guid Guid { get; set; } = Guid.NewGuid();
 
 		public string Test()
 		{

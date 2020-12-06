@@ -45,9 +45,9 @@ namespace TeenyInjector.Tests
 		public void ObjectFromAbstractClass()
 		{
 			TeenyKernel kernel = new TeenyKernel();
-			kernel.Bind<AbstractClass3>().To<Class3>();
+			kernel.Bind<AbstractClass>().To<ConcreteClass>();
 
-			AbstractClass3 test3 = kernel.Get<AbstractClass3>();
+			AbstractClass test3 = kernel.Get<AbstractClass>();
 
 			Assert.IsNotNull(test3);
 			Assert.AreEqual(test3.Test(), "Hello World!");

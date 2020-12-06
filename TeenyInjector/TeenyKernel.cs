@@ -193,7 +193,9 @@ namespace TeenyInjector
 			// If ValueFunction is defined, return its result
 			if (false == (binding.ValueFunction is null))
 			{
-				return binding.ValueFunction.Invoke(this);
+				object instance = binding.ValueFunction.Invoke(this);
+				TryAddBindingInstance(binding, instance);
+				return instance;
 			}
 
 			Type t = binding.ImplementationType;

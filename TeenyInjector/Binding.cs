@@ -97,6 +97,11 @@ namespace TeenyInjector
 			this.InjectedIntoType = typeof(T);
 			return this;
 		}
+
+		public Binding ToFactory()
+		{
+			return this;
+		}
 	}
 
 	public class Binding<T> : Binding

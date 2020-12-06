@@ -51,11 +51,11 @@
   <ItemGroup>
     <Compile Include="Interfaces\BasicClass1.cs" />
     <Compile Include="Interfaces\BasicClass2.cs" />
-    <Compile Include="Interfaces\Class3.cs" />
+    <Compile Include="Interfaces\ConcreteClass.cs" />
     <Compile Include="Interfaces\RandomIdClass.cs" />
     <Compile Include="Interfaces\ReverseClass.cs" />
     <Compile Include="Interfaces\Interface1.cs" />
-    <Compile Include="Interfaces\AbstractClass3.cs" />
+    <Compile Include="Interfaces\AbstractClass.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="InstantiationTests.cs" />
     <Compile Include="BindingTests.cs" />

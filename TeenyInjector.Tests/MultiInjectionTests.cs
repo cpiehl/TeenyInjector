@@ -29,7 +29,8 @@ namespace TeenyInjector.Tests
 
 			kernel.Bind<Interface1>().To<BasicClass1>();
 			kernel.Bind<Interface1>().To<BasicClass2>();
-			kernel.Bind<Interface1>().To<RandomIdClass>().WhenInjectedInto<ReverseClass>();
+			kernel.Bind<Interface1>().To<RandomIdClass>()
+				.WhenInjectedInto<ReverseClass>();
 
 			IEnumerable<Interface1> interfaces = kernel.GetAll<Interface1>();
 
@@ -53,11 +54,15 @@ namespace TeenyInjector.Tests
 			Assert.IsTrue(interfaces.Any());
 			Assert.IsFalse(interfaces.Any(i => i is null));
 
+			string id1 = interfaces.ElementAt(0).Test();
+			string id2 = interfaces.ElementAt(1).Test();
+			string id3 = interfaces.ElementAt(2).Test();
+
 			// First two should be same instance
-			Assert.AreEqual(interfaces.ElementAt(0).Test(), interfaces.ElementAt(1).Test());
+			Assert.AreEqual(id1, id2);
 
 			// Last one is unique
-			Assert.AreNotEqual(interfaces.ElementAt(0).Test(), interfaces.ElementAt(2).Test());
+			Assert.AreNotEqual(id1, id3);
 		}
 	}
 }

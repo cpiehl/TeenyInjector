@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net35</TargetFramework>
     <Authors>Charles Piehl</Authors>
-    <Version>1.2.2</Version>
+    <Version>1.2.3</Version>
     <PackageReleaseNotes></PackageReleaseNotes>
     <Description>The teeniest dependency injector I can get away with. Only supports constructor injection.
 

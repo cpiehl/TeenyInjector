@@ -1,7 +1,7 @@
 ﻿
 namespace TeenyInjector.Tests.Interfaces
 {
-	class Class3 : AbstractClass3
+	class ConcreteClass : AbstractClass
 	{
 		public override string Test()
 		{
